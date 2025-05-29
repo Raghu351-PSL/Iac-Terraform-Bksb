@@ -6,11 +6,11 @@ variable "aws_region" {
 
 # Availability Zones
 variable "availability_zone_a" {
-  default = "ap-southeast-2a"
+  default = "eu-west-2a"
 }
 
 variable "availability_zone_b" {
-  default = "ap-southeast-2b"
+  default = "eu-west-2b"
 }
 
 # VPC and Subnet CIDRs
@@ -97,4 +97,11 @@ variable "rds_password" {
 
 variable "rds_db_subnet_group_name" {
   default = "bksb-staging-db-subnet-group"
+}
+
+# Instance profile
+
+variable "instnace_profile_name"{
+  description = "instance_profile_name"
+  default = "Raghu-OA"
 }

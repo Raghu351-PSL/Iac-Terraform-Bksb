@@ -1,5 +1,13 @@
 provider "aws" {
   region = var.aws_region
+  assume_role {
+    role_arn = "arn:aws:iam::069705096352:role/Raghu-OA"
+  }
+}
+
+data "aws_iam_role" "instance_profile_name"{
+  name = var.instnace_profile_name
+  
 }
 
 resource "aws_vpc" "main" {
@@ -146,7 +154,7 @@ resource "aws_db_instance" "default" {
   skip_final_snapshot     = true
   publicly_accessible     = false
 
-#   tags = {
-#     Name = var.rds_instance_name
-#   }
+   tags = {
+     Name = var.rds_instance_name
+   }
 }
