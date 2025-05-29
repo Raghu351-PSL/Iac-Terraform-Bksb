@@ -3,7 +3,7 @@
 variable "region" {
   description = "AWS region"
   type        = string
-  default     = "eu-west-2"  # New region or your required region
+  default     = "ap-southeast-2"  # New region or your required region
 }
 
 variable "cluster_name" {
