@@ -1,5 +1,5 @@
 resource "aws_iam_role" "bksbUpdatesLambdaServiceRole" {
-  name = "bksbUpdatesLambdaServiceRole"
+  name = "newBksbUpdatesLambdaServiceRole"  # Updated name
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -16,7 +16,7 @@ resource "aws_iam_role" "bksbUpdatesLambdaServiceRole" {
 }
 
 resource "aws_iam_policy" "bksbUpdatesLambdaServicePolicy" {
-  name = "bksbUpdatesLambdaServiceRoleDefaultPolicy"
+  name = "newBksbUpdatesLambdaServiceRoleDefaultPolicy"  # Updated name
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -29,8 +29,8 @@ resource "aws_iam_policy" "bksbUpdatesLambdaServicePolicy" {
         ]
         Effect   = "Allow"
         Resource = [
-          "arn:aws:s3:::bksb-prod-updates-eu-west-2",
-          "arn:aws:s3:::bksb-prod-updates-eu-west-2/*"
+          "arn:aws:s3:::new-bksb-prod-updates-eu-west-2",  # Updated bucket name
+          "arn:aws:s3:::new-bksb-prod-updates-eu-west-2/*"  # Updated bucket name
         ]
       }
     ]
@@ -43,17 +43,17 @@ resource "aws_iam_role_policy_attachment" "bksbUpdatesLambdaServicePolicyAttachm
 }
 
 resource "aws_lambda_function" "bksbUpdatesLambda" {
-  function_name = "bksbUpdatesLambda"
-  s3_bucket     = "cdk-hnb659fds-assets-203616038615-eu-west-2"
-  s3_key        = "0f9add17a7fa4b33fe6009ddf460e6c732fc1048e2c454332ec502bfb0dfa0d5.zip"
+  function_name = "newBksbUpdatesLambda"  # Updated function name
+  s3_bucket     = "new-cdk-hnb659fds-assets-203616038615-eu-west-2"  # Updated bucket name
+  s3_key        = "new-0f9add17a7fa4b33fe6009ddf460e6c732fc1048e2c454332ec502bfb0dfa0d5.zip"  # Updated key
   role          = aws_iam_role.bksbUpdatesLambdaServiceRole.arn
   handler       = "lambda.lambda_handler"
   runtime       = "python3.9"
 
   environment {
     variables = {
-      UPDATES_BUCKET               = "bksb-prod-updates-eu-west-2"
-      UPDATES_BUCKET_VERSIONS_PATH = "releases"
+      UPDATES_BUCKET               = "new-bksb-prod-updates-eu-west-2"  # Updated bucket name
+      UPDATES_BUCKET_VERSIONS_PATH = "new-releases"  # Updated path
     }
   }
 
@@ -69,7 +69,7 @@ resource "aws_lambda_permission" "bksbUpdatesLambdaInvoke" {
 }
 
 resource "aws_lb_target_group" "bksbUpdatesLambdaTargetGroup" {
-  name     = "bksbUpdatesLambdaTargetGroup"
+  name     = "newBksbUpdatesLambdaTargetGroup"  # Updated name
   target_type = "lambda"
 
   health_check {
@@ -128,13 +128,13 @@ resource "aws_lb_listener_rule" "bksbUpdatesLambdaTestListenerRule" {
 
   action {
     type             = "forward"
-    order            = 2
     target_group_arn = aws_lb_target_group.bksbUpdatesLambdaTargetGroup.arn
+    order            = 2
   }
 
   condition {
     host_header {
-      values = ["updates.bksb.co.uk"]
+      values = ["updates.bksb.co.uk"]  # Updated host header
     }
   }
 
@@ -147,7 +147,7 @@ resource "aws_lb_listener_rule" "bksbUpdatesLambdaTestListenerRule" {
 }
 
 resource "aws_iam_role" "bksbUpdatesLambdaExecutionRole" {
-  name = "bksbUpdatesLambdaExecutionRole"
+  name = "newBksbUpdatesLambdaExecutionRole"  # Updated name
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -164,7 +164,7 @@ resource "aws_iam_role" "bksbUpdatesLambdaExecutionRole" {
 }
 
 resource "aws_iam_role_policy" "bksbUpdatesLambdaExecutionRolePolicy" {
-  name = "bksbUpdatesLambdaExecutionRolePolicy"
+  name = "newBksbUpdatesLambdaExecutionRolePolicy"  # Updated name
   role = aws_iam_role.bksbUpdatesLambdaExecutionRole.name
 
   policy = jsonencode({
@@ -180,8 +180,8 @@ resource "aws_iam_role_policy" "bksbUpdatesLambdaExecutionRolePolicy" {
         ]
         Effect   = "Allow"
         Resource = [
-          "arn:aws:s3:::cdn.private.bksb.co.uk",
-          "arn:aws:s3:::cdn.private.bksb.co.uk/*"
+          "arn:aws:s3:::newcdn.private.bksb.co.uk",  # Updated resource
+          "arn:aws:s3:::newcdn.private.bksb.co.uk/*"  # Updated resource
         ]
       },
       {
@@ -197,25 +197,25 @@ resource "aws_iam_role_policy" "bksbUpdatesLambdaExecutionRolePolicy" {
           "xray:PutTraceSegments"
         ]
         Effect   = "Allow"
-        Resource = "*"
+        Resource = "*"  # No change
       }
     ]
   })
 }
 
 resource "aws_ecs_task_definition" "bksbUpdatesLambdaTaskDefinition" {
-  family                   = "prod_bksb-reforms-api"
+  family                   = "new_prod_bksb-reforms-api"  # Updated family name
   network_mode             = "awsvpc"
   requires_compatibilities  = ["FARGATE"]
   cpu                      = "2048"
   memory                   = "8192"
   execution_role_arn       = aws_iam_role.bksbUpdatesLambdaExecutionRole.arn
-  task_role_arn            = aws_iam_role.bksbUpdatesLambdaServiceRole.arn
+  task_role_arn            = aws_iam_role.bksbUpdatesLambdaServiceRole.arn  # Updated reference
 
   container_definitions = jsonencode([
     {
-      name      = "bksb-reforms-web-client"
-      image     = "592311462240.dkr.ecr.eu-west-2.amazonaws.com/bksb/dev/bksb-reforms-web-clients:128-linux-x86_64"
+      name      = "new_bksb-reforms-web-client"  # Updated container name
+      image     = "592311462240.dkr.ecr.eu-west-2.amazonaws.com/bksb/dev/new_bksb-reforms-web-clients:128-linux-x86_64"  # Updated image
       cpu       = 224
       memory    = 256
       essential = true
@@ -244,7 +244,7 @@ resource "aws_ecs_task_definition" "bksbUpdatesLambdaTaskDefinition" {
         },
         {
           name  = "BKSB__APP__DeferredLoginURL"
-          value = "bksblive2.co.uk/bksblive2/Login.aspx"
+          value = "new_bksblive2.co.uk/bksblive2/Login.aspx"  # Updated value
         },
         {
           name  = "BKSB__APP__DisplayNavbar"
@@ -260,11 +260,11 @@ resource "aws_ecs_task_definition" "bksbUpdatesLambdaTaskDefinition" {
         },
         {
           name  = "BKSB__APP__FSRootPartition"
-          value = "cdn.private.bksb.co.uk"
+          value = "newcdn.private.bksb.co.uk"  # Updated value
         },
         {
           name  = "BKSB__APP__FSRootPath"
-          value = "ecl/0.3.4/"
+          value = "new_ecl/0.3.4/"  # Updated value
         },
         {
           name  = "BKSB__APP__FSUseLocal"
@@ -282,11 +282,25 @@ resource "aws_ecs_task_definition" "bksbUpdatesLambdaTaskDefinition" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = aws_cloudwatch_log_group.BKSBReformsClientECSContainerTaskDefinitionBKSBReformsClientECSContainerLogGroup7E105506.name
+          awslogs-group         = aws_cloudwatch_log_group.BKSBReformsClientECSContainerTaskDefinitionBKSBReformsClientECSContainerLogGroup.name
           awslogs-region        = "eu-west-2"
-          awslogs-stream-prefix  = "bksb-ecs"
+          awslogs-stream-prefix  = "new_bksb-ecs"  # Updated value
         }
       }
+      secrets = [
+        {
+          name      = "BKSB__DB__DatabaseConnectionString"
+          valueFrom = "arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/new_bksb-reforms-api/db_connection_string"  # Updated value
+        },
+        {
+          name      = "BKSB__APP__SessionStoreConfigString"
+          valueFrom = "arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/new_bksb-reforms-api/redis_connection_string"  # Updated value
+        },
+        {
+          name      = "BKSB__APP__TransferTokenInvalidationStoreConfigString"
+          valueFrom = "arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/new_bksb-reforms-api/redis_connection_string"  # Updated value
+        }
+      ]
     },
     {
       name      = "xray-daemon"
@@ -303,9 +317,9 @@ resource "aws_ecs_task_definition" "bksbUpdatesLambdaTaskDefinition" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = aws_cloudwatch_log_group.BKSBReformsClientECSContainerTaskDefinitionBKSBLive2ReformsAPIXRayECSContainerLogGroup4DBCBDC0.name
+          awslogs-group         = aws_cloudwatch_log_group.BKSBReformsClientECSContainerTaskDefinitionBKSBLive2ReformsAPIXRayECSContainerLogGroup.name
           awslogs-region        = "eu-west-2"
-          awslogs-stream-prefix  = "bksb-ecs"
+          awslogs-stream-prefix  = "new_bksb-ecs"  # Updated value
         }
       }
     }
@@ -318,37 +332,37 @@ resource "aws_cloudwatch_log_group" "BKSBReformsClientECSContainerTaskDefinition
 }
 
 resource "aws_ecs_service" "BKSBReformsClientECSService" {
-  name            = "BKSBReformsClientECSService"
+  name            = "NewBKSBReformsClientECSService"  # Updated name
   cluster         = var.ecs_cluster_name
-  task_definition = aws_ecs_task_definition.bksbUpdatesLambdaTaskDefinition.arn
+  task_definition = aws_ecs_task_definition.bksbUpdatesLambdaTaskDefinition.arn  # Updated reference
   desired_count   = 1
   launch_type     = "FARGATE"
 
   network_configuration {
     assign_public_ip = "DISABLED"
-    security_groups  = [aws_security_group.BKSBReformsAPISG.id]
+    security_groups  = [aws_security_group.NewBKSBReformsAPISG.id]  # Updated reference
     subnets          = var.subnet_ids
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.bksbUpdatesLambdaTargetGroup.arn
-    container_name   = "bksb-reforms-web-client"
+    target_group_arn = aws_lb_target_group.NewALBTargetGroupOne.arn  # Updated reference
+    container_name   = "new_bksb-reforms-api"  # Updated container name
     container_port   = 443
   }
 }
 
 resource "aws_application_autoscaling_target" "BKSBReformsClientECSServiceTaskCountTarget" {
   max_capacity       = 12
-  min_capacity       = 1
-  resource_id        = "service/${var.ecs_cluster_name}/${aws_ecs_service.BKSBReformsClientECSService.name}"
+  min_capacity       = 3
+  resource_id        = "service/${var.ecs_cluster_name}/${aws_ecs_service.BKSBReformsClientECSService.name}"  # Updated reference
   scalable_dimension  = "ecs:service:DesiredCount"
   service_namespace   = "ecs"
 }
 
 resource "aws_application_autoscaling_policy" "BKSBReformsClientECSServiceScalingPolicy" {
-  name                   = "BKSBReformsClientECSServiceScalingPolicy"
+  name                   = "NewBKSBReformsClientECSServiceScalingPolicy"  # Updated name
   policy_type           = "TargetTrackingScaling"
-  scaling_target_id     = aws_application_autoscaling_target.BKSBReformsClientECSServiceTaskCountTarget.id
+  scaling_target_id     = aws_application_autoscaling_target.BKSBReformsClientECSServiceTaskCountTarget.id  # Updated reference
 
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
@@ -359,12 +373,12 @@ resource "aws_application_autoscaling_policy" "BKSBReformsClientECSServiceScalin
 }
 
 resource "aws_codedeploy_app" "CDApplication" {
-  name             = "CDApplication"
+  name             = "NewCDApplication"  # Updated name
   compute_platform = "ECS"
 }
 
 resource "aws_iam_role" "CDRole" {
-  name = "CDRole"
+  name = "NewCDRole"  # Updated name
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -381,8 +395,8 @@ resource "aws_iam_role" "CDRole" {
 }
 
 resource "aws_iam_role_policy" "CDRolePolicy" {
-  name = "AWSCodeDeployRoleForECS"
-  role = aws_iam_role.CDRole.id
+  name = "NewAWSCodeDeployRoleForECS"  # Updated name
+  role = aws_iam_role.CDRole.name  # Updated reference
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -395,17 +409,17 @@ resource "aws_iam_role_policy" "CDRolePolicy" {
           "iam:PassRole"
         ]
         Effect   = "Allow"
-        Resource = "*"
+        Resource = "*"  # No change
       }
     ]
   })
 }
 
 resource "aws_codedeploy_deployment_group" "CDDeploymentGroup" {
-  app_name              = aws_codedeploy_app.CDApplication.name
-  service_role_arn      = aws_iam_role.CDRole.arn
+  app_name               = aws_codedeploy_app.CDApplication.name
+  deployment_group_name  = "NewBKSBReformsAPIECSDeploymentGroup"  # Updated name
+  service_role_arn       = aws_iam_role.CDRole.arn
   deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
-  deployment_group_name = "BKSBReformsClientECSDeploymentGroup"
 
   auto_rollback_configuration {
     enabled = true
@@ -414,12 +428,12 @@ resource "aws_codedeploy_deployment_group" "CDDeploymentGroup" {
 
   blue_green_deployment_config {
     deployment_ready_option {
-      action_on_timeout    = "STOP_DEPLOYMENT"
-      wait_time_in_minutes = 1440
+      action_on_timeout     = "STOP_DEPLOYMENT"
+      wait_time_in_minutes  = 1440
     }
 
     terminate_blue_instances_on_deployment_success {
-      action                           = "TERMINATE"
+      action                         = "TERMINATE"
       termination_wait_time_in_minutes = 60
     }
   }
@@ -432,15 +446,19 @@ resource "aws_codedeploy_deployment_group" "CDDeploymentGroup" {
   load_balancer_info {
     target_group_pair_info {
       prod_traffic_route {
-        listener_arns = [var.prod_listener_arn]
-      }
-
-      target_group {
-        name = aws_lb_target_group.bksbUpdatesLambdaTargetGroup.name
+        listener_arns = [var.prod_listener_arn]  # Updated variable reference
       }
 
       test_traffic_route {
-        listener_arns = [var.test_listener_arn]
+        listener_arns = [var.test_listener_arn]  # Updated variable reference
+      }
+
+      target_group {
+        name = aws_lb_target_group.NewALBTargetGroupOne.name  # Updated reference
+      }
+
+      target_group {
+        name = aws_lb_target_group.NewALBTargetGroupTwo.name  # Updated reference
       }
     }
   }
