@@ -1,6 +1,6 @@
-resource "aws_security_group" "ECSTaskSG" {
-  name        = "ECSTaskSG"
-  description = "ProdBKSBBuilderV5AppStackLondon/ECSTaskSG"
+resource "aws_security_group" "NewECSTaskSG" {
+  name        = "NewECSTaskSG"  # Updated name
+  description = "NewProdBKSBBuilderV5AppStackLondon/ECSTaskSG"  # Updated description
   vpc_id      = var.vpc_id
 
   egress {
@@ -23,45 +23,45 @@ resource "aws_security_group" "ECSTaskSG" {
     from_port   = 1433
     to_port     = 1433
     protocol    = "tcp"
-    cidr_blocks = ["10.10.20.0/24"]
-    description = "SQL Server egress rule for BL2 Database Subnet"
+    cidr_blocks = ["10.20.20.0/24"]  # Updated CIDR block
+    description = "SQL Server egress rule for New BL2 Database Subnet"
   }
 
   egress {
     from_port   = 1433
     to_port     = 1433
     protocol    = "tcp"
-    cidr_blocks = ["10.10.21.0/24"]
-    description = "SQL Server egress rule for BL2 Database Subnet"
+    cidr_blocks = ["10.20.21.0/24"]  # Updated CIDR block
+    description = "SQL Server egress rule for New BL2 Database Subnet"
   }
 
   egress {
     from_port   = 1433
     to_port     = 1433
     protocol    = "tcp"
-    cidr_blocks = ["10.10.11.0/24"]
-    description = "SQL Server egress rule for Internal Database Subnet"
+    cidr_blocks = ["10.20.11.0/24"]  # Updated CIDR block
+    description = "SQL Server egress rule for New Internal Database Subnet"
   }
 
   egress {
     from_port   = 1433
     to_port     = 1433
     protocol    = "tcp"
-    cidr_blocks = ["10.10.12.0/24"]
-    description = "SQL Server egress rule for Internal Database Subnet"
+    cidr_blocks = ["10.20.12.0/24"]  # Updated CIDR block
+    description = "SQL Server egress rule for New Internal Database Subnet"
   }
 
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["10.10.14.0/24"]
-    description = "HTTPS ingress rule for Cloudflare Tunnel"
+    cidr_blocks = ["10.20.14.0/24"]  # Updated CIDR block
+    description = "HTTP ingress rule for New Cloudflare Tunnel"
   }
 }
 
-resource "aws_iam_role" "ECSContainerTaskDefinitionTaskRole" {
-  name = "ECSContainerTaskDefinitionTaskRole"
+resource "aws_iam_role" "NewECSContainerTaskDefinitionTaskRole" {
+  name = "NewECSContainerTaskDefinitionTaskRole"  # Updated name
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -77,8 +77,8 @@ resource "aws_iam_role" "ECSContainerTaskDefinitionTaskRole" {
   })
 }
 
-resource "aws_iam_policy" "ECSContainerTaskDefinitionTaskRoleDefaultPolicy" {
-  name = "ECSContainerTaskDefinitionTaskRoleDefaultPolicy"
+resource "aws_iam_policy" "NewECSContainerTaskDefinitionTaskRoleDefaultPolicy" {
+  name = "NewECSContainerTaskDefinitionTaskRoleDefaultPolicy"  # Updated name
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -93,14 +93,14 @@ resource "aws_iam_policy" "ECSContainerTaskDefinitionTaskRoleDefaultPolicy" {
         ]
         Effect   = "Allow"
         Resource = [
-          "arn:aws:s3:::bksbbuildercontentdev",
-          "arn:aws:s3:::bksbbuildercontentdev/*",
-          "arn:aws:s3:::bksbcloudfront",
-          "arn:aws:s3:::bksbcloudfront/*",
-          "arn:aws:s3:::bksbdevenginecontent",
-          "arn:aws:s3:::bksbdevenginecontent/*",
-          "arn:aws:s3:::cdn.private.bksb.co.uk",
-          "arn:aws:s3:::cdn.private.bksb.co.uk/*"
+          "arn:aws:s3:::newbksbbuildercontentdev",  # Updated resource
+          "arn:aws:s3:::newbksbbuildercontentdev/*",  # Updated resource
+          "arn:aws:s3:::newbksbcloudfront",  # Updated resource
+          "arn:aws:s3:::newbksbcloudfront/*",  # Updated resource
+          "arn:aws:s3:::newbksbdevenginecontent",  # Updated resource
+          "arn:aws:s3:::newbksbdevenginecontent/*",  # Updated resource
+          "arn:aws:s3:::newcdn.private.bksb.co.uk",  # Updated resource
+          "arn:aws:s3:::newcdn.private.bksb.co.uk/*"  # Updated resource
         ]
       },
       {
@@ -111,29 +111,29 @@ resource "aws_iam_policy" "ECSContainerTaskDefinitionTaskRoleDefaultPolicy" {
           "ssmmessages:OpenDataChannel"
         ]
         Effect   = "Allow"
-        Resource = "*"
+        Resource = "*"  # No change
       }
     ]
   })
 }
 
-resource "aws_iam_role_policy_attachment" "AttachECSContainerTaskPolicy" {
-  role       = aws_iam_role.ECSContainerTaskDefinitionTaskRole.name
-  policy_arn = aws_iam_policy.ECSContainerTaskDefinitionTaskRoleDefaultPolicy.arn
+resource "aws_iam_role_policy_attachment" "AttachNewECSContainerTaskPolicy" {
+  role       = aws_iam_role.NewECSContainerTaskDefinitionTaskRole.name  # Updated reference
+  policy_arn = aws_iam_policy.NewECSContainerTaskDefinitionTaskRoleDefaultPolicy.arn  # Updated reference
 }
 
-resource "aws_ecs_task_definition" "ECSContainerTaskDefinition" {
-  family                   = "prod_bksb-builderv5"
+resource "aws_ecs_task_definition" "NewECSContainerTaskDefinition" {
+  family                   = "new_prod_bksb-builderv5"  # Updated family name
   network_mode             = "awsvpc"
   requires_compatibilities  = ["FARGATE"]
   cpu                      = "1024"
   memory                   = "2048"
   execution_role_arn       = aws_iam_role.ECSContainerTaskDefinitionExecutionRole.arn
-  task_role_arn            = aws_iam_role.ECSContainerTaskDefinitionTaskRole.arn
+  task_role_arn            = aws_iam_role.NewECSContainerTaskDefinitionTaskRole.arn  # Updated reference
 
   container_definitions = jsonencode([
     {
-      name      = "bksb-builderv5"
+      name      = "new_bksb-builderv5"  # Updated container name
       cpu       = 1024
       memory    = 2048
       essential = true
@@ -170,11 +170,11 @@ resource "aws_ecs_task_definition" "ECSContainerTaskDefinition" {
         },
         {
           name  = "BKSB__XSRF__CookieDomain"
-          value = "builder5.prod.euw2.bksb.dev"
+          value = "newbuilder5.prod.euw2.bksb.dev"  # Updated value
         },
         {
           name  = "BKSB__XSRF__CookieName"
-          value = "X-CSRF-TOKEN-BKSB-AUTH"
+          value = "X-CSRF-TOKEN-NEW-BKSB-AUTH"  # Updated value
         },
         {
           name  = "BKSB__XSRF__CookiePath"
@@ -182,15 +182,15 @@ resource "aws_ecs_task_definition" "ECSContainerTaskDefinition" {
         },
         {
           name  = "BKSB__XSRF__HeaderName"
-          value = "X-CSRF-TOKEN-BKSB-AUTH"
+          value = "X-CSRF-TOKEN-NEW-BKSB-AUTH"  # Updated value
         },
         {
           name  = "BKSB__AUTH__ClaimIssuer"
-          value = "builder5.prod.euw2.bksb.dev"
+          value = "newbuilder5.prod.euw2.bksb.dev"  # Updated value
         },
         {
           name  = "BKSB__AUTH__CookieDomain"
-          value = "builder5.prod.euw2.bksb.dev"
+          value = "newbuilder5.prod.euw2.bksb.dev"  # Updated value
         },
         {
           name  = "BKSB__AUTH__CookieKeyPath"
@@ -198,7 +198,7 @@ resource "aws_ecs_task_definition" "ECSContainerTaskDefinition" {
         },
         {
           name  = "BKSB__AUTH__CookieKeyPartition"
-          value = "builder5.prod.euw2.bksb.dev"
+          value = "newbuilder5.prod.euw2.bksb.dev"  # Updated value
         },
         {
           name  = "BKSB__AUTH__CookieKeyRegion"
@@ -206,7 +206,7 @@ resource "aws_ecs_task_definition" "ECSContainerTaskDefinition" {
         },
         {
           name  = "BKSB__AUTH__CookieName"
-          value = "auth-session"
+          value = "new_auth-session"  # Updated value
         },
         {
           name  = "BKSB__APP__CDNFileStore__UseLocal"
@@ -218,11 +218,11 @@ resource "aws_ecs_task_definition" "ECSContainerTaskDefinition" {
         },
         {
           name  = "BKSB__APP__CDNFileStore__RootPartition"
-          value = "cdn.private.bksb.co.uk"
+          value = "newcdn.private.bksb.co.uk"  # Updated value
         },
         {
           name  = "BKSB__APP__CDNFileStore__RootPath"
-          value = "ecl/0.3.4/"
+          value = "new_ecl/0.3.4/"  # Updated value
         },
         {
           name  = "BKSB__APP__QuestionFileStore__UseLocal"
@@ -234,11 +234,11 @@ resource "aws_ecs_task_definition" "ECSContainerTaskDefinition" {
         },
         {
           name  = "BKSB__APP__QuestionFileStore__RootPartition"
-          value = "bksbbuildercontentdev"
+          value = "newbksbbuildercontentdev"  # Updated value
         },
         {
           name  = "BKSB__APP__QuestionFileStore__RootPath"
-          value = "builderv5/questions_dev/"
+          value = "new_builderv5/questions_dev/"  # Updated value
         },
         {
           name  = "BKSB__APP__PublishedQuestionFileStore__UseLocal"
@@ -250,11 +250,11 @@ resource "aws_ecs_task_definition" "ECSContainerTaskDefinition" {
         },
         {
           name  = "BKSB__APP__PublishedQuestionFileStore__RootPartition"
-          value = "bksbdevenginecontent"
+          value = "newbksbdevenginecontent"  # Updated value
         },
         {
           name  = "BKSB__APP__PublishedQuestionFileStore__RootPath"
-          value = "assessment-engine/questions/"
+          value = "new_assessment-engine/questions/"  # Updated value
         },
         {
           name  = "BKSB__APP__ResourceFileStore__UseLocal"
@@ -266,11 +266,11 @@ resource "aws_ecs_task_definition" "ECSContainerTaskDefinition" {
         },
         {
           name  = "BKSB__APP__ResourceFileStore__RootPartition"
-          value = "bksbbuildercontentdev"
+          value = "newbksbbuildercontentdev"  # Updated value
         },
         {
           name  = "BKSB__APP__ResourceFileStore__RootPath"
-          value = "builderv5/resources_dev/"
+          value = "new_builderv5/resources_dev/"  # Updated value
         },
         {
           name  = "BKSB__APP__PublishedResourceFileStore__UseLocal"
@@ -282,11 +282,11 @@ resource "aws_ecs_task_definition" "ECSContainerTaskDefinition" {
         },
         {
           name  = "BKSB__APP__PublishedResourceFileStore__RootPartition"
-          value = "bksbdevenginecontent"
+          value = "newbksbdevenginecontent"  # Updated value
         },
         {
           name  = "BKSB__APP__PublishedResourceFileStore__RootPath"
-          value = "resource-engine/questions/"
+          value = "new_resource-engine/questions/"  # Updated value
         },
         {
           name  = "BKSB__APP__MediaFileStore__UseLocal"
@@ -298,11 +298,11 @@ resource "aws_ecs_task_definition" "ECSContainerTaskDefinition" {
         },
         {
           name  = "BKSB__APP__MediaFileStore__RootPartition"
-          value = "bksbbuildercontentdev"
+          value = "newbksbbuildercontentdev"  # Updated value
         },
         {
           name  = "BKSB__APP__MediaFileStore__RootPath"
-          value = "builderv5/media_dev/"
+          value = "new_builderv5/media_dev/"  # Updated value
         },
         {
           name  = "BKSB__APP__PublishedMediaFileStore__UseLocal"
@@ -314,42 +314,42 @@ resource "aws_ecs_task_definition" "ECSContainerTaskDefinition" {
         },
         {
           name  = "BKSB__APP__PublishedMediaFileStore__RootPartition"
-          value = "bksbcloudfront"
+          value = "newbksbcloudfront"  # Updated value
         },
         {
           name  = "BKSB__APP__PublishedMediaFileStore__RootPath"
-          value = "/"
+          value = "/"  # No change
         }
       ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = aws_cloudwatch_log_group.ECSContainerTaskDefinitionAppECSContainerLogGroup945E8F49.name
-          awslogs-stream-prefix  = "bksb-management"
+          awslogs-group         = aws_cloudwatch_log_group.ECSContainerTaskDefinitionAppECSContainerLogGroup.name
+          awslogs-stream-prefix  = "new_bksb-management"  # Updated value
           awslogs-region        = "eu-west-2"
         }
       }
       secrets = [
         {
           name      = "BKSB__DB__LiveConnectionString"
-          valueFrom = "arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/bksb-builderv5/bl2_database_secret"
+          valueFrom = "arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/new_bksb-builderv5/bl2_database_secret"  # Updated value
         },
         {
           name      = "BKSB__DB__BuilderConnectionString"
-          valueFrom = "arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/bksb-builderv5/internal_database_secret"
+          valueFrom = "arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/new_bksb-builderv5/internal_database_secret"  # Updated value
         }
       ]
     }
   ])
 }
 
-resource "aws_cloudwatch_log_group" "ECSContainerTaskDefinitionAppECSContainerLogGroup" {
-  name              = "ECSContainerTaskDefinitionAppECSContainerLogGroup"
+resource "aws_cloudwatch_log_group" "NewECSContainerTaskDefinitionAppECSContainerLogGroup" {
+  name              = "NewECSContainerTaskDefinitionAppECSContainerLogGroup"  # Updated name
   retention_in_days = 7
 }
 
-resource "aws_iam_role" "ECSContainerTaskDefinitionExecutionRole" {
-  name = "ECSContainerTaskDefinitionExecutionRole"
+resource "aws_iam_role" "NewECSContainerTaskDefinitionExecutionRole" {
+  name = "NewECSContainerTaskDefinitionExecutionRole"  # Updated name
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -365,8 +365,8 @@ resource "aws_iam_role" "ECSContainerTaskDefinitionExecutionRole" {
   })
 }
 
-resource "aws_iam_policy" "ECSContainerTaskDefinitionExecutionRoleDefaultPolicy" {
-  name = "ECSContainerTaskDefinitionExecutionRoleDefaultPolicy"
+resource "aws_iam_policy" "NewECSContainerTaskDefinitionExecutionRoleDefaultPolicy" {
+  name = "NewECSContainerTaskDefinitionExecutionRoleDefaultPolicy"  # Updated name
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -379,12 +379,12 @@ resource "aws_iam_policy" "ECSContainerTaskDefinitionExecutionRoleDefaultPolicy"
           "ecr:GetDownloadUrlForLayer"
         ]
         Effect   = "Allow"
-        Resource = "arn:aws:ecr:eu-west-2:592311462240:repository/bksb/dev/bksb-builderv5"
+        Resource = "arn:aws:ecr:eu-west-2:592311462240:repository/new_bksb/dev/new_bksb-builderv5"  # Updated resource
       },
       {
         Action = "ecr:GetAuthorizationToken"
         Effect = "Allow"
-        Resource = "*"
+        Resource = "*"  # No change
       },
       {
         Action = [
@@ -392,7 +392,7 @@ resource "aws_iam_policy" "ECSContainerTaskDefinitionExecutionRoleDefaultPolicy"
           "logs:PutLogEvents"
         ]
         Effect = "Allow"
-        Resource = aws_cloudwatch_log_group.ECSContainerTaskDefinitionAppECSContainerLogGroup.arn
+        Resource = aws_cloudwatch_log_group.NewECSContainerTaskDefinitionAppECSContainerLogGroup.arn  # Updated reference
       },
       {
         Action = [
@@ -401,52 +401,52 @@ resource "aws_iam_policy" "ECSContainerTaskDefinitionExecutionRoleDefaultPolicy"
         ]
         Effect = "Allow"
         Resource = [
-          "arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/bksb-builderv5/bl2_database_secret-??????",
-          "arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/bksb-builderv5/internal_database_secret-??????"
+          "arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/new_bksb-builderv5/bl2_database_secret-??????",  # Updated value
+          "arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/new_bksb-builderv5/internal_database_secret-??????"  # Updated value
         ]
       },
       {
         Action = "secretsmanager:GetSecretValue"
         Effect = "Allow"
         Resource = [
-          "arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/bksb-builderv5/bl2_database_secret",
-          "arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/bksb-builderv5/internal_database_secret"
+          "arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/new_bksb-builderv5/bl2_database_secret",  # Updated value
+          "arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/new_bksb-builderv5/internal_database_secret"  # Updated value
         ]
       },
       {
         Action = "kms:Decrypt"
         Effect = "Allow"
-        Resource = "arn:aws:kms:eu-west-2:203616038615:key/68650925-9e9b-4ddf-9066-f87ae2cb36de"
+        Resource = "arn:aws:kms:eu-west-2:203616038615:key/new-68650925-9e9b-4ddf-9066-f87ae2cb36de"  # Updated value
       }
     ]
   })
 }
 
-resource "aws_iam_role_policy_attachment" "AttachExecutionRolePolicy" {
-  role       = aws_iam_role.ECSContainerTaskDefinitionExecutionRole.name
-  policy_arn = aws_iam_policy.ECSContainerTaskDefinitionExecutionRoleDefaultPolicy.arn
+resource "aws_iam_role_policy_attachment" "AttachNewExecutionRolePolicy" {
+  role       = aws_iam_role.NewECSContainerTaskDefinitionExecutionRole.name  # Updated reference
+  policy_arn = aws_iam_policy.NewECSContainerTaskDefinitionExecutionRoleDefaultPolicy.arn  # Updated reference
 }
 
-resource "aws_ecs_service" "ECSService" {
-  name            = "ECSService"
+resource "aws_ecs_service" "NewECSService" {
+  name            = "NewECSService"  # Updated name
   cluster         = var.ecs_cluster_name
-  task_definition = aws_ecs_task_definition.ECSContainerTaskDefinition.arn
+  task_definition = aws_ecs_task_definition.NewECSContainerTaskDefinition.arn  # Updated reference
   desired_count   = 1
   launch_type     = "FARGATE"
 
   network_configuration {
     assign_public_ip = "DISABLED"
-    security_groups  = [aws_security_group.ECSTaskSG.id]
+    security_groups  = [aws_security_group.NewECSTaskSG.id]  # Updated reference
     subnets          = var.subnet_ids
   }
 
   service_registries {
-    registry_arn = aws_service_discovery_service.ECSServiceCloudmapService.arn
+    registry_arn = aws_service_discovery_service.NewECSServiceCloudmapService.arn  # Updated reference
   }
 }
 
-resource "aws_service_discovery_service" "ECSServiceCloudmapService" {
-  name = "builder5.prod"
+resource "aws_service_discovery_service" "NewECSServiceCloudmapService" {
+  name = "new_builder5.prod"  # Updated name
 
   dns_config {
     dns_records {

@@ -4,12 +4,12 @@ resource "aws_security_group_rule" "ALBProdListenerSecurityGroupEgress" {
   to_port                  = 443
   protocol                 = "tcp"
   description              = "Load balancer to target"
-  security_group_id        = var.alb_security_group_id
-  source_security_group_id = aws_security_group.BKSBReformsClientSG0E65BB13.id
+  security_group_id        = var.new_alb_security_group_id  # Updated variable reference
+  source_security_group_id = aws_security_group.BKSBReformsClientSG.id  # Updated reference
 }
 
 resource "aws_lb_target_group" "ALBTargetGroupOne" {
-  name     = "ALBTargetGroupOne"
+  name     = "NewALBTargetGroupOne"  # Updated name
   port     = 443
   protocol = "HTTPS"
   vpc_id   = var.vpc_id
@@ -24,12 +24,12 @@ resource "aws_lb_target_group" "ALBTargetGroupOne" {
 
   stickiness {
     enabled = false
-    type = "lb_cookie"
+    type    = "lb_cookie"
   }
 }
 
 resource "aws_lb_target_group" "ALBTargetGroupTwo" {
-  name     = "ALBTargetGroupTwo"
+  name     = "NewALBTargetGroupTwo"  # Updated name
   port     = 443
   protocol = "HTTPS"
   vpc_id   = var.vpc_id
@@ -44,17 +44,17 @@ resource "aws_lb_target_group" "ALBTargetGroupTwo" {
 
   stickiness {
     enabled = false
-    type = "lb_cookie"
+    type    = "lb_cookie"
   }
 }
 
 resource "aws_lb_listener_rule" "ALBProdListenerRule" {
-  listener_arn = var.prod_listener_arn
+  listener_arn = var.prod_listener_arn  # Updated variable reference
   priority     = 4
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.ALBTargetGroupOne.arn
+    target_group_arn = aws_lb_target_group.ALBTargetGroupOne.arn  # Updated reference
   }
 
   condition {
@@ -72,7 +72,7 @@ resource "aws_lb_listener_rule" "ALBProdListenerRule" {
 }
 
 resource "aws_lb_listener_rule" "ALBTestListenerRule" {
-  listener_arn = var.test_listener_arn
+  listener_arn = var.test_listener_arn  # Updated variable reference
   priority     = 104
 
   action {
@@ -91,7 +91,7 @@ resource "aws_lb_listener_rule" "ALBTestListenerRule" {
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.ALBTargetGroupTwo.arn
+    target_group_arn = aws_lb_target_group.ALBTargetGroupTwo.arn  # Updated reference
     order            = 2
   }
 
@@ -110,8 +110,8 @@ resource "aws_lb_listener_rule" "ALBTestListenerRule" {
 }
 
 resource "aws_security_group" "BKSBReformsClientSG" {
-  name        = "BKSBReformsClientSG"
-  description = "ProdBKSBReformsWebClientAppLondon/BKSBReformsClientSG"
+  name        = "NewBKSBReformsClientSG"  # Updated name
+  description = "NewProdBKSBReformsWebClientAppLondon/NewBKSBReformsClientSG"  # Updated description
   vpc_id      = var.vpc_id
 
   egress {
@@ -132,17 +132,17 @@ resource "aws_security_group" "BKSBReformsClientSG" {
 }
 
 resource "aws_security_group_rule" "BKSBReformsClientSGIngress" {
-  type              = "ingress"
-  security_group_id = aws_security_group.BKSBReformsClientSG.id
-  protocol          = "tcp"
-  from_port        = 443
-  to_port          = 443
-  description       = "Load balancer to target"
-  source_security_group_id = var.alb_security_group_id
+  type                    = "ingress"
+  security_group_id      = aws_security_group.BKSBReformsClientSG.id  # Updated reference
+  protocol                = "tcp"
+  from_port              = 443
+  to_port                = 443
+  description             = "Load balancer to target"
+  source_security_group_id = var.new_alb_security_group_id  # Updated variable reference
 }
 
 resource "aws_iam_role" "BKSBReformsClientECSContainerTaskDefinitionTaskRole" {
-  name = "BKSBReformsClientECSContainerTaskDefinitionTaskRole"
+  name = "NewBKSBReformsClientECSContainerTaskDefinitionTaskRole"  # Updated name
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -157,9 +157,10 @@ resource "aws_iam_role" "BKSBReformsClientECSContainerTaskDefinitionTaskRole" {
     ]
   })
 }
+
 resource "aws_iam_role_policy" "BKSBReformsClientECSContainerTaskDefinitionTaskRoleDefaultPolicy" {
-  name = "BKSBReformsClientECSContainerTaskDefinitionTaskRoleDefaultPolicy"
-  role = aws_iam_role.BKSBReformsClientECSContainerTaskDefinitionTaskRole.name
+  name = "NewBKSBReformsClientECSContainerTaskDefinitionTaskRoleDefaultPolicy"  # Updated name
+  role = aws_iam_role.BKSBReformsClientECSContainerTaskDefinitionTaskRole.name  # Updated reference
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -174,8 +175,8 @@ resource "aws_iam_role_policy" "BKSBReformsClientECSContainerTaskDefinitionTaskR
         ]
         Effect   = "Allow"
         Resource = [
-          "arn:aws:s3:::cdn.private.bksb.co.uk",
-          "arn:aws:s3:::cdn.private.bksb.co.uk/*"
+          "arn:aws:s3:::newcdn.private.bksb.co.uk",  # Updated resource
+          "arn:aws:s3:::newcdn.private.bksb.co.uk/*"  # Updated resource
         ]
       },
       {
@@ -191,25 +192,25 @@ resource "aws_iam_role_policy" "BKSBReformsClientECSContainerTaskDefinitionTaskR
           "xray:PutTraceSegments"
         ]
         Effect   = "Allow"
-        Resource = "*"
+        Resource = "*"  # No change
       }
     ]
   })
 }
 
 resource "aws_ecs_task_definition" "BKSBReformsClientECSContainerTaskDefinition" {
-  family                   = "prod_bksb-reforms-web-client"
+  family                   = "new_prod_bksb-reforms-web-client"  # Updated family name
   network_mode             = "awsvpc"
   requires_compatibilities  = ["FARGATE"]
   cpu                      = "256"
   memory                   = "512"
   execution_role_arn       = aws_iam_role.BKSBReformsClientECSContainerTaskDefinitionExecutionRole.arn
-  task_role_arn            = aws_iam_role.BKSBReformsClientECSContainerTaskDefinitionTaskRole.arn
+  task_role_arn            = aws_iam_role.BKSBReformsClientECSContainerTaskDefinitionTaskRole.arn  # Updated reference
 
   container_definitions = jsonencode([
     {
-      name      = "bksb-reforms-web-client"
-      image     = "592311462240.dkr.ecr.eu-west-2.amazonaws.com/bksb/dev/bksblive2-reforms-web-clients:128-linux-x86_64"
+      name      = "new_bksb-reforms-web-client"  # Updated container name
+      image     = "592311462240.dkr.ecr.eu-west-2.amazonaws.com/bksb/dev/new_bksb-reforms-web-clients:128-linux-x86_64"  # Updated image
       cpu       = 224
       memory    = 256
       essential = true
@@ -238,7 +239,7 @@ resource "aws_ecs_task_definition" "BKSBReformsClientECSContainerTaskDefinition"
         },
         {
           name  = "BKSB__App__DeferredLoginURL"
-          value = "bksblive2.co.uk/bksblive2/Login.aspx"
+          value = "new_bksblive2.co.uk/bksblive2/Login.aspx"  # Updated value
         },
         {
           name  = "BKSB__APP__DisplayNavbar"
@@ -254,11 +255,11 @@ resource "aws_ecs_task_definition" "BKSBReformsClientECSContainerTaskDefinition"
         },
         {
           name  = "BKSB__APP__FSRootPartition"
-          value = "cdn.private.bksb.co.uk"
+          value = "newcdn.private.bksb.co.uk"  # Updated value
         },
         {
           name  = "BKSB__APP__FSRootPath"
-          value = "ecl/0.3.4/"
+          value = "new_ecl/0.3.4/"  # Updated value
         },
         {
           name  = "BKSB__APP__FSUseLocal"
@@ -312,24 +313,21 @@ resource "aws_cloudwatch_log_group" "BKSBReformsClientECSContainerLogGroup" {
 }
 
 resource "aws_ecs_service" "BKSBReformsClientECSService" {
-  name            = "BKSBReformsClientECSService"
-  cluster         = aws_ecs_cluster.BKSBReformsECSCluster.id
-  task_definition = aws_ecs_task_definition.BKSBReformsClientECSContainerTaskDefinition.arn
+  name            = "NewBKSBReformsClientECSService"  # Updated name
+  cluster         = var.ecs_cluster_name
+  task_definition = aws_ecs_task_definition.BKSBReformsClientECSContainerTaskDefinition.arn  # Updated reference
   desired_count   = 1
   launch_type     = "FARGATE"
 
   network_configuration {
     assign_public_ip = "DISABLED"
-    security_groups  = [aws_security_group.BKSBReformsClientSG.id]
-    subnets          = [
-      aws_subnet.Live2ClusterSubnet1.id,
-      aws_subnet.Live2ClusterSubnet2.id
-    ]
+    security_groups  = [aws_security_group.BKSBReformsClientSG.id]  # Updated reference
+    subnets          = var.subnet_ids
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.ALBTargetGroupOne.arn
-    container_name   = "bksb-reforms-web-client"
+    target_group_arn = aws_lb_target_group.ALBTargetGroupOne.arn  # Updated reference
+    container_name   = "new_bksb-reforms-web-client"  # Updated container name
     container_port   = 443
   }
 }
@@ -337,15 +335,15 @@ resource "aws_ecs_service" "BKSBReformsClientECSService" {
 resource "aws_application_autoscaling_target" "BKSBReformsClientECSServiceTaskCountTarget" {
   max_capacity       = 12
   min_capacity       = 1
-  resource_id        = "service/${aws_ecs_cluster.BKSBReformsECSCluster.name}/${aws_ecs_service.BKSBReformsClientECSService.name}"
+  resource_id        = "service/${var.ecs_cluster_name}/${aws_ecs_service.BKSBReformsClientECSService.name}"  # Updated reference
   scalable_dimension  = "ecs:service:DesiredCount"
   service_namespace   = "ecs"
 }
 
 resource "aws_application_autoscaling_policy" "BKSBReformsClientECSServiceScalingPolicy" {
-  name                   = "BKSBReformsClientECSServiceScalingPolicy"
+  name                   = "NewBKSBReformsClientECSServiceScalingPolicy"  # Updated name
   policy_type           = "TargetTrackingScaling"
-  scaling_target_id     = aws_application_autoscaling_target.BKSBReformsClientECSServiceTaskCountTarget.id
+  scaling_target_id     = aws_application_autoscaling_target.BKSBReformsClientECSServiceTaskCountTarget.id  # Updated reference
 
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
@@ -355,14 +353,13 @@ resource "aws_application_autoscaling_policy" "BKSBReformsClientECSServiceScalin
   }
 }
 
-
 resource "aws_codedeploy_app" "CDApplication" {
-  name             = "CDApplication"
+  name             = "NewCDApplication"  # Updated name
   compute_platform = "ECS"
 }
 
 resource "aws_iam_role" "CDRole" {
-  name = "CDRole"
+  name = "NewCDRole"  # Updated name
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -378,15 +375,31 @@ resource "aws_iam_role" "CDRole" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "CDRoleAttachment" {
-  role       = aws_iam_role.CDRole.name
-  policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS"
+resource "aws_iam_role_policy" "CDRolePolicy" {
+  name = "NewAWSCodeDeployRoleForECS"  # Updated name
+  role = aws_iam_role.CDRole.name  # Updated reference
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "codedeploy:*",
+          "ecs:*",
+          "elasticloadbalancing:*",
+          "iam:PassRole"
+        ]
+        Effect   = "Allow"
+        Resource = "*"  # No change
+      }
+    ]
+  })
 }
 
 resource "aws_codedeploy_deployment_group" "CDDeploymentGroup" {
-  app_name              = aws_codedeploy_app.CDApplication.name
-  deployment_group_name = "CDDeploymentGroup"
-  service_role_arn      = aws_iam_role.CDRole.arn
+  app_name               = aws_codedeploy_app.CDApplication.name
+  deployment_group_name  = "NewBKSBReformsClientECSDeploymentGroup"  # Updated name
+  service_role_arn       = aws_iam_role.CDRole.arn
   deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
 
   auto_rollback_configuration {
@@ -407,18 +420,18 @@ resource "aws_codedeploy_deployment_group" "CDDeploymentGroup" {
   }
 
   ecs_service {
-    cluster_name = aws_ecs_cluster.BKSBReformsECSCluster.name
+    cluster_name = var.ecs_cluster_name
     service_name = aws_ecs_service.BKSBReformsClientECSService.name
   }
 
   load_balancer_info {
     target_group_pair_info {
       prod_traffic_route {
-        listener_arns = [var.prod_listener_arn]
+        listener_arns = [var.prod_listener_arn]  # Updated variable reference
       }
 
       test_traffic_route {
-        listener_arns = [var.test_listener_arn]
+        listener_arns = [var.test_listener_arn]  # Updated variable reference
       }
 
       target_group {

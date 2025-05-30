@@ -24,8 +24,8 @@ resource "aws_iam_role" "Live2VpcFlowLogsRole" {
   })
 }
 
-resource "aws_iam_policy" "Live2VpcFlowLogsRoleDefaultPolicy" {
-  name = "Live2VpcFlowLogsRoleDefaultPolicy"
+resource "aws_iam_policy" "NewLive2VpcFlowLogsRoleDefaultPolicy" {
+  name = "NewLive2VpcFlowLogsRoleDefaultPolicy"  # Updated name
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -37,30 +37,28 @@ resource "aws_iam_policy" "Live2VpcFlowLogsRoleDefaultPolicy" {
           "logs:PutLogEvents"
         ]
         Effect   = "Allow"
-        Resource = aws_cloudwatch_log_group.Live2VpcAllTraffic.arn
+        Resource = aws_cloudwatch_log_group.NewLive2VpcAllTraffic.arn  # Updated resource reference
       },
       {
         Action = "iam:PassRole"
-        Effect = "Allow"
-        Resource = aws_iam_role.Live2VpcFlowLogsRole.arn
+        Effect   = "Allow"
+        Resource = aws_iam_role.NewLive2VpcFlowLogsRole.arn  # Updated resource reference
       }
     ]
   })
 }
-
-resource "aws_iam_role_policy_attachment" "AttachLive2VpcFlowLogsPolicy" {
-  role       = aws_iam_role.Live2VpcFlowLogsRole.name
-  policy_arn = aws_iam_policy.Live2VpcFlowLogsRoleDefaultPolicy.arn
+resource "aws_iam_role_policy_attachment" "NewLive2VpcFlowLogsRoleAttachment" {
+  role       = aws_iam_role.NewLive2VpcFlowLogsRole.name  # Updated resource reference
+  policy_arn = aws_iam_policy.NewLive2VpcFlowLogsRoleDefaultPolicy.arn  # Updated resource reference
 }
-
 resource "aws_vpc" "RootVpc" {
-  cidr_block              = "10.10.0.0/16"
+  cidr_block              = "10.20.0.0/16"  # New CIDR block
   enable_dns_hostnames    = true
   enable_dns_support      = true
   instance_tenancy        = "default"
 
   tags = {
-    Name = "prod_vpc_live2_eu-west-2"
+    Name = "prod_vpc_live2_eu-west-2_new"  # Updated name
   }
 }
 
@@ -83,10 +81,10 @@ resource "aws_vpc_gateway_attachment" "VPCIGwAttachment" {
 resource "aws_subnet" "FirewallSubnet" {
   vpc_id            = aws_vpc.RootVpc.id
   availability_zone = "eu-west-2a"
-  cidr_block        = "10.10.2.0/24"
+  cidr_block        = "10.20.2.0/24"  # New CIDR block
 
   tags = {
-    Name = "ProdBaseStackLondon/FirewallSubnet"
+    Name = "ProdBaseStackLondon/FirewallSubnet_New"  # Updated name
   }
 }
 
@@ -94,7 +92,7 @@ resource "aws_route_table" "FirewallSubnetRouteTable" {
   vpc_id = aws_vpc.RootVpc.id
 
   tags = {
-    Name = "ProdBaseStackLondon/FirewallSubnet"
+    Name = "ProdBaseStackLondon/FirewallSubnet_New"  # Updated name
   }
 }
 
@@ -114,10 +112,10 @@ resource "aws_route" "FirewallSubnetDefaultRoute" {
 resource "aws_subnet" "NatSubnet" {
   vpc_id            = aws_vpc.RootVpc.id
   availability_zone = "eu-west-2a"
-  cidr_block        = "10.10.1.0/24"
+  cidr_block        = "10.20.1.0/24"  # New CIDR block
 
   tags = {
-    Name = "ProdBaseStackLondon/NatSubnet"
+    Name = "ProdBaseStackLondon/NatSubnet_New"  # Updated name
   }
 }
 
@@ -125,7 +123,7 @@ resource "aws_route_table" "NatSubnetRouteTable" {
   vpc_id = aws_vpc.RootVpc.id
 
   tags = {
-    Name = "ProdBaseStackLondon/NatSubnet"
+    Name = "ProdBaseStackLondon/NatSubnet_New"  # Updated name
   }
 }
 
@@ -172,7 +170,7 @@ resource "aws_route_table" "FirewallIGWRouteTable" {
 
 resource "aws_route" "FirewallIGWRoute" {
   route_table_id         = aws_route_table.FirewallIGWRouteTable.id
-  destination_cidr_block = "10.10.1.0/24"
+  destination_cidr_block = "10.20.1.0/24"  # Updated CIDR block
   gateway_id             = aws_internet_gateway.IGW.id
 }
 
@@ -182,7 +180,7 @@ resource "aws_route_table_association" "FirewallGatewayRouteTableAssociation" {
 }
 
 resource "aws_resourcegroups_group" "ProductionInstances" {
-  name        = "live2_prod_rg_eu-west-2"
+  name        = "live2_prod_rg_eu-west-2_new"  # Updated name
   description = "CDK Managed Machines"
 
   resource_query {

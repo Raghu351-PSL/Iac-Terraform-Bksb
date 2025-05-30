@@ -3,17 +3,17 @@ variable "vpc_id" {
   type        = string
 }
 
-variable "alb_security_group_id" {
-  description = "The security group ID for the ALB."
+variable "new_alb_security_group_id" {
+  description = "The security group ID for the Application Load Balancer (ALB)."
   type        = string
 }
 
-variable "prod_listener_arn" {
+variable "new_prod_listener_arn" {
   description = "The ARN of the production ALB listener."
   type        = string
 }
 
-variable "test_listener_arn" {
+variable "new_test_listener_arn" {
   description = "The ARN of the test ALB listener."
   type        = string
 }
