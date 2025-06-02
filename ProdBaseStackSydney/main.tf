@@ -181,7 +181,7 @@ resource "aws_route_table_association" "FirewallGatewayRouteTableAssociation" {
 
 resource "aws_resourcegroups_group" "ProductionInstances" {
   name        = "live2_prod_rg_eu-west-2_new"  # Updated name
-  description = "CDK Managed Machines"
+  description = "Terraform Managed Machines"
 
   resource_query {
     type  = "TAG_FILTERS_1_0"
