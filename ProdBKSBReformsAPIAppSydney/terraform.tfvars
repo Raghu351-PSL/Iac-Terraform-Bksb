@@ -1,0 +1,13 @@
+vpc_id                           = "vpc-005358c415bc03d2a"
+cluster_name                     = "stage-bksb-live2reforms-cluster"
+subnet_1_id                      = "subnet-03dab5d928ae6d294"
+subnet_2_id                      = "subnet-0317393f66ed16f8d"
+alb_listener_prod_arn            = "arn:aws:elasticloadbalancing:ap-southeast-2:352515133004:listener/app/StageB-Live2-xnlTjSaDmFvj/92bd57624dc83d12/66a13a3fe0951914"
+alb_listener_test_arn            = "arn:aws:elasticloadbalancing:ap-southeast-2:352515133004:listener/app/StageB-Live2-xnlTjSaDmFvj/92bd57624dc83d12/7e8b0b8e400ffc12"
+load_balancer_secret_arn         = "arn:aws:secretsmanager:ap-southeast-2:352515133004:secret:stage/loadbalancer/load_balancer_secret"
+db_connection_string_secret_arn  = "arn:aws:secretsmanager:ap-southeast-2:352515133004:secret:stage/bksb-reforms-api/db_connection_string"
+redis_connection_string_secret_arn = "arn:aws:secretsmanager:ap-southeast-2:352515133004:secret:stage/bksb-reforms-api/redis_connection_string"
+kms_key_arn                      = "arn:aws:kms:ap-southeast-2:352515133004:key/37936227-6a94-40bc-ad45-90c2ca7bd379"
+ecr_repository_url               = "592311462240.dkr.ecr.eu-west-2.amazonaws.com/bksb/dev/bksb-reforms-service:107-linux-x86_64"
+alb_security_group_id            = "sg-0b9c02e80606fdf25"
+

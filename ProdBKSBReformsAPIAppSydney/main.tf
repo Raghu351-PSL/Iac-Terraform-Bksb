@@ -1,117 +1,7 @@
-resource "aws_security_group_rule" "AllowFromALBToAPISG" {
-  type                     = "ingress"
-  from_port                = 443
-  to_port                  = 443
-  protocol                 = "tcp"
-  description              = "Allow traffic from ALB SG to API SG"
-  security_group_id        = aws_security_group.NewBKSBReformsAPISG.id  # Updated reference
-  source_security_group_id = var.new_alb_security_group_id  # Updated variable reference
-}
-
-resource "aws_lb_target_group" "NewALBTargetGroupOne" {
-  name     = "NewALBTargetGroupOne"  # Updated name
-  port     = 443
-  protocol = "HTTPS"
-  vpc_id   = var.vpc_id
-
-  health_check {
-    path                = "/api/healthCheck"
-    interval            = 20
-    timeout             = 10
-    healthy_threshold   = 2
-    unhealthy_threshold = 4
-  }
-
-  stickiness {
-    enabled = false
-    type    = "lb_cookie"
-  }
-}
-
-resource "aws_lb_target_group" "NewALBTargetGroupTwo" {
-  name     = "NewALBTargetGroupTwo"  # Updated name
-  port     = 443
-  protocol = "HTTPS"
-  vpc_id   = var.vpc_id
-
-  health_check {
-    path                = "/api/healthCheck"
-    interval            = 20
-    timeout             = 10
-    healthy_threshold   = 2
-    unhealthy_threshold = 4
-  }
-
-  stickiness {
-    enabled = false
-    type    = "lb_cookie"
-  }
-}
-
-resource "aws_lb_listener_rule" "NewALBProdListenerRule" {
-  listener_arn = var.new_prod_listener_arn  # Updated variable reference
-  priority     = 3
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.NewALBTargetGroupOne.arn  # Updated reference
-  }
-
-  condition {
-    path_pattern {
-      values = ["/bksblive2/v5api/*"]
-    }
-  }
-
-  condition {
-    http_header {
-      http_header_name = "x-bksb-internal"
-      values           = ["{{resolve:secretsmanager:arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/loadbalancer/load_balancer_secret:SecretString:::}}"]
-    }
-  }
-}
-
-resource "aws_lb_listener_rule" "NewALBTestListenerRule" {
-  listener_arn = var.new_test_listener_arn  # Updated variable reference
-  priority     = 104
-
-  action {
-    type = "authenticate-oidc"
-    order = 1
-    authenticate_oidc {
-      authorization_endpoint = "https://identity.oneadvanced.com/auth/realms/education-platform/protocol/openid-connect/auth"
-      client_id              = "education-preprod-alb"
-      client_secret          = "{{resolve:secretsmanager:arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/loadbalancer/alb_authentication_secret:SecretString:::}}"
-      issuer                 = "https://identity.oneadvanced.com/auth/realms/education-platform"
-      scope                  = "openid"
-      token_endpoint         = "https://identity.oneadvanced.com/auth/realms/education-platform/protocol/openid-connect/token"
-      user_info_endpoint     = "https://identity.oneadvanced.com/auth/realms/education-platform/protocol/openid-connect/userinfo"
-    }
-  }
-
-  action {
-    type             = "forward"
-    order            = 2
-    target_group_arn = aws_lb_target_group.NewALBTargetGroupTwo.arn  # Updated reference
-  }
-
-  condition {
-    path_pattern {
-      values = ["/bksblive2/v5api/*"]
-    }
-  }
-
-  condition {
-    http_header {
-      http_header_name = "x-bksb-internal"
-      values           = ["{{resolve:secretsmanager:arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/loadbalancer/load_balancer_secret:SecretString:::}}"]
-    }
-  }
-}
-
-resource "aws_security_group" "NewBKSBReformsAPISG" {
-  name        = "NewBKSBReformsAPISG"  # Updated name
-  description = "NewProdBKSBReformsAPIAppLondon/NewBKSBReformsAPISG"  # Updated description
+# AWS::EC2::SecurityGroup
+resource "aws_security_group" "bksb_reforms_api_sg" {
+  name        = "StageBKSBReformsAPIAppSydney/BKSBReformsAPISG"
+  description = "StageBKSBReformsAPIAppSydney/BKSBReformsAPISG"
   vpc_id      = var.vpc_id
 
   egress {
@@ -134,48 +24,119 @@ resource "aws_security_group" "NewBKSBReformsAPISG" {
     from_port   = 1433
     to_port     = 1433
     protocol    = "tcp"
-    cidr_blocks = ["10.20.20.0/24"]  # Updated CIDR block
-    description = "SQL Server egress rule for New Database Subnet"
+    cidr_blocks = ["10.10.20.0/24"]
+    description = "SQL Server egress rule for Database Subnet"
   }
 
   egress {
     from_port   = 1433
     to_port     = 1433
     protocol    = "tcp"
-    cidr_blocks = ["10.20.21.0/24"]  # Updated CIDR block
-    description = "SQL Server egress rule for New Database Subnet"
+    cidr_blocks = ["10.10.21.0/24"]
+    description = "SQL Server egress rule for Database Subnet"
   }
 
   egress {
     from_port   = 6379
     to_port     = 6379
     protocol    = "tcp"
-    cidr_blocks = ["10.20.22.0/24"]  # Updated CIDR block
-    description = "Redis egress rule for New Redis Subnet"
+    cidr_blocks = ["10.10.22.0/24"]
+    description = "Redis egress rule for Redis Subnet"
   }
 
   egress {
     from_port   = 6379
     to_port     = 6379
     protocol    = "tcp"
-    cidr_blocks = ["10.20.23.0/24"]  # Updated CIDR block
-    description = "Redis egress rule for New Redis Subnet"
+    cidr_blocks = ["10.10.23.0/24"]
+    description = "Redis egress rule for Redis Subnet"
+  }
+
+  tags = {
+    Name = "StageBKSBReformsAPIAppSydney/BKSBReformsAPISG/Resource"
   }
 }
 
-resource "aws_security_group_rule" "NewBKSBReformsAPISGIngress" {
-  type                    = "ingress"
-  security_group_id      = aws_security_group.NewBKSBReformsAPISG.id  # Updated reference
-  protocol                = "tcp"
-  from_port              = 443
-  to_port                = 443
-  description             = "Load balancer to target"
-  source_security_group_id = var.new_alb_security_group_id  # Updated variable reference
+# AWS::EC2::SecurityGroupIngress
+resource "aws_security_group_rule" "bksb_reforms_api_sg_ingress" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  description              = "Load balancer to target"
+  security_group_id        = aws_security_group.bksb_reforms_api_sg.id
+  source_security_group_id = var.alb_security_group_id
 }
 
-resource "aws_iam_role" "NewBKSBReformsAPIECSContainerTaskDefinitionTaskRole" {
-  name = "NewBKSBReformsAPIECSContainerTaskDefinitionTaskRole"  # Updated name
+# AWS::ElasticLoadBalancingV2::TargetGroup - ALBTargetGroupOne
+resource "aws_lb_target_group" "alb_target_group_one" {
+  name                   = "ALBTargetGroupOne"
+  port                   = 443
+  protocol               = "HTTPS"
+  vpc_id                 = var.vpc_id
+  target_type            = "ip"
+  health_check {
+    enabled            = true
+    interval           = 20
+    path               = "/api/healthCheck"
+    timeout            = 10
+    healthy_threshold  = 2
+    unhealthy_threshold = 4
+  }
+  stickiness {
+    enabled = false
+    type    = "lb_cookie"
+  }
 
+  tags = {
+    name = "StageBKSBReformsAPIAppSydney/ALBTargetGroupOne/Resource"
+  }
+}
+
+# AWS::ElasticLoadBalancingV2::TargetGroup - ALBTargetGroupTwo
+resource "aws_lb_target_group" "alb_target_group_two" {
+  name                   = "ALBTargetGroupTwo"
+  port                   = 443
+  protocol               = "HTTPS"
+  vpc_id                 = var.vpc_id
+  target_type            = "ip"
+  health_check {
+    enabled            = true
+    interval           = 20
+    path               = "/api/healthCheck"
+    timeout            = 10
+    healthy_threshold  = 2
+    unhealthy_threshold = 4
+  }
+  stickiness {
+    enabled = false
+    type    = "lb_cookie"
+  }
+
+  tags = {
+    "Name" = "StageBKSBReformsAPIAppSydney/ALBTargetGroupTwo/Resource"
+  }
+}
+
+resource "aws_lb_listener_rule" "alb_listener_rule" {
+  listener_arn = var.alb_listener_prod_arn
+  priority     = 100
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.alb_target_group_one.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/bksblive2/v5api/*"]
+    }
+  }
+}
+
+# AWS::IAM::Role - BKSBReformsAPIECSContainerTaskDefinitionTaskRole
+resource "aws_iam_role" "ecs_task_role" {
+  name = "BKSBReformsAPIECSContainerTaskDefinitionTaskRole"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -185,15 +146,19 @@ resource "aws_iam_role" "NewBKSBReformsAPIECSContainerTaskDefinitionTaskRole" {
         Principal = {
           Service = "ecs-tasks.amazonaws.com"
         }
-      }
+      },
     ]
   })
+
+  tags = {
+    "Name" = "StageBKSBReformsAPIAppSydney/BKSBReformsAPIECSContainerTaskDefinition/TaskRole/Resource"
+  }
 }
 
-resource "aws_iam_role_policy" "NewBKSBReformsAPIDefaultPolicy" {
-  name = "NewBKSBReformsAPIECSContainerTaskDefinitionTaskRoleDefaultPolicy"  # Updated name
-  role = aws_iam_role.NewBKSBReformsAPIECSContainerTaskDefinitionTaskRole.name  # Updated reference
-
+# AWS::IAM::Policy - BKSBReformsAPIECSContainerTaskDefinitionTaskRoleDefaultPolicy
+resource "aws_iam_policy" "ecs_task_role_default_policy" {
+  name        = "BKSBReformsAPIECSContainerTaskDefinitionTaskRoleDefaultPolicy"
+  description = "Default policy for ECS task role"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -207,8 +172,12 @@ resource "aws_iam_role_policy" "NewBKSBReformsAPIDefaultPolicy" {
         ]
         Effect   = "Allow"
         Resource = [
-          "arn:aws:s3:::newcdn.private.bksb.co.uk",  # Updated resource
-          "arn:aws:s3:::newcdn.private.bksb.co.uk/*"  # Updated resource
+          "arn:aws:s3:::bksbbuildercontentdev",
+          "arn:aws:s3:::bksbbuildercontentdev/*",
+          "arn:aws:s3:::bksbdevenginecontent-stage",
+          "arn:aws:s3:::bksbdevenginecontent-stage/*",
+          "arn:aws:s3:::staging-bksb-fargate-ireland-key",
+          "arn:aws:s3:::staging-bksb-fargate-ireland-key/*"
         ]
       },
       {
@@ -224,28 +193,146 @@ resource "aws_iam_role_policy" "NewBKSBReformsAPIDefaultPolicy" {
           "xray:PutTraceSegments"
         ]
         Effect   = "Allow"
-        Resource = "*"  # No change
-      }
+        Resource = "*"
+      },
     ]
   })
 }
 
-resource "aws_ecs_task_definition" "NewBKSBReformsAPIECSContainerTaskDefinition" {
-  family                   = "new_prod_bksb-reforms-api"  # Updated family name
-  network_mode             = "awsvpc"
-  requires_compatibilities  = ["FARGATE"]
+resource "aws_iam_role_policy_attachment" "ecs_task_role_attachment" {
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = aws_iam_policy.ecs_task_role_default_policy.arn
+}
+
+
+# AWS::IAM::Role - BKSBReformsAPIECSContainerTaskDefinitionExecutionRole
+resource "aws_iam_role" "ecs_execution_role" {
+  name = "BKSBReformsAPIECSContainerTaskDefinitionExecutionRole"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+      },
+    ]
+  })
+
+  tags = {
+    "Name" = "StageBKSBReformsAPIAppSydney_c893891a06d599518928b25ea512491ba0194f52da"
+    "Name" = "StageBKSBReformsAPIAppSydney/BKSBReformsAPIECSContainerTaskDefinition/ExecutionRole/Resource"
+  }
+}
+
+# AWS::Logs::LogGroup - BKSBReformsAPIECSContainerTaskDefinitionBKSBReformsAPIECSContainerLogGroup
+resource "aws_cloudwatch_log_group" "bksb_reforms_api_ecs_container_log_group" {
+  name              = "/ecs/stage-bksb-reforms-api"
+  retention_in_days = 30
+  tags = {
+    "Name" = "StageBKSBReformsAPIAppSydney/BKSBReformsAPIECSContainerTaskDefinition/BKSBReformsAPIECSContainer/LogGroup/Resource"
+  }
+}
+
+# AWS::Logs::LogGroup - BKSBReformsAPIECSContainerTaskDefinitionBKSBLive2ReformsAPIXRayECSContainerLogGroup
+resource "aws_cloudwatch_log_group" "bksb_reforms_api_xray_ecs_container_log_group" {
+  name              = "/ecs/stage-bksb-reforms-api-xray"
+  retention_in_days = 30
+  tags = {
+    "Name" = "StageBKSBReformsAPIAppSydney/BKSBLive2ReformsAPIXRayECSContainer/LogGroup/Resource"
+  }
+}
+
+
+# AWS::IAM::Policy - BKSBReformsAPIECSContainerTaskDefinitionExecutionRoleDefaultPolicy
+resource "aws_iam_policy" "ecs_execution_role_default_policy" {
+  name        = "BKSBReformsAPIECSContainerTaskDefinitionExecutionRoleDefaultPolicy"
+  description = "Default policy for ECS execution role"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:BatchGetImage",
+          "ecr:GetAuthorizationToken",
+          "ecr:GetDownloadUrlForLayer"
+        ]
+        Effect   = "Allow"
+        Resource = "arn:aws:ecr:eu-west-2:592311462240:repository/bksb/dev/bksb-reforms-service"
+      },
+      {
+        Action   = "ecr:GetAuthorizationToken"
+        Effect   = "Allow"
+        Resource = "*"
+      },
+      {
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Effect   = "Allow"
+        Resource = [
+          "${aws_cloudwatch_log_group.bksb_reforms_api_ecs_container_log_group.arn}:*",
+          "${aws_cloudwatch_log_group.bksb_reforms_api_xray_ecs_container_log_group.arn}:*" 
+        ]
+      },
+      {
+        Action = [
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:GetSecretValue"
+        ]
+        Effect   = "Allow"
+        Resource = [
+          "${var.db_connection_string_secret_arn}*",
+          "${var.redis_connection_string_secret_arn}*",
+        ]
+      },
+      {
+        Action   = "secretsmanager:GetSecretValue"
+        Effect   = "Allow"
+        Resource = [
+          "${var.db_connection_string_secret_arn}*",
+          "${var.redis_connection_string_secret_arn}*",
+        ]
+      },
+      {
+        Action   = "kms:Decrypt"
+        Effect   = "Allow"
+        Resource = var.kms_key_arn
+      },
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_execution_role_attachment" {
+  role       = aws_iam_role.ecs_execution_role.name
+  policy_arn = aws_iam_policy.ecs_execution_role_default_policy.arn
+}
+
+# AWS::ECS::TaskDefinition
+resource "aws_ecs_task_definition" "bksb_reforms_api_task_definition" {
+  family                   = "stage_bksb-reforms-api"
   cpu                      = "2048"
   memory                   = "8192"
-  execution_role_arn       = aws_iam_role.BKSBReformsAPIECSContainerTaskDefinitionExecutionRoleC05553F4.arn
-  task_role_arn            = aws_iam_role.NewBKSBReformsAPIECSContainerTaskDefinitionTaskRole.arn  # Updated reference
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  execution_role_arn       = aws_iam_role.ecs_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+  runtime_platform {
+    cpu_architecture        = "X86_64"
+    operating_system_family = "LINUX"
+  }
 
   container_definitions = jsonencode([
     {
-      name      = "new_bksb-reforms-api"  # Updated container name
-      image     = "592311462240.dkr.ecr.eu-west-2.amazonaws.com/bksb/dev/new_bksb-reforms-service:98-linux-x86_64"  # Updated image
-      cpu       = 2016
-      memory    = 7936
-      essential = true
+      name        = "bksb-reforms-api"
+      cpu         = 2016
+      memory      = 7936
+      essential   = true
+      image       = var.ecr_repository_url
       portMappings = [
         {
           containerPort = 443
@@ -253,88 +340,67 @@ resource "aws_ecs_task_definition" "NewBKSBReformsAPIECSContainerTaskDefinition"
         }
       ]
       environment = [
-        {
-          name  = "ASPNETCORE_ENVIRONMENT"
-          value = "Production"
-        },
-        {
-          name  = "ASPNETCORE_URLS"
-          value = "https://+:443"
-        },
-        {
-          name  = "BKSB__APP__DeferLogin"
-          value = "true"
-        },
-        {
-          name  = "BKSB__APP__DeferredLoginTransferPagePath"
-          value = "/bksblive2/V5Transition.aspx"
-        },
-        {
-          name  = "BKSB__APP__DeferredLoginURL"
-          value = "new_bksblive2.co.uk/bksblive2/Login.aspx"  # Updated value
-        },
-        {
-          name  = "BKSB__APP__DisplayNavbar"
-          value = "false"
-        },
-        {
-          name  = "BKSB__APP__DisplaySidebar"
-          value = "false"
-        },
-        {
-          name  = "BKSB__APP__FSRegion"
-          value = "eu-west-1"
-        },
-        {
-          name  = "BKSB__APP__FSRootPartition"
-          value = "newcdn.private.bksb.co.uk"  # Updated value
-        },
-        {
-          name  = "BKSB__APP__FSRootPath"
-          value = "new_ecl/0.3.4/"  # Updated value
-        },
-        {
-          name  = "BKSB__APP__FSUseLocal"
-          value = "false"
-        },
-        {
-          name  = "BKSB__APP__HostingBasePath"
-          value = "/bksblive2/v5/"
-        },
-        {
-          name  = "BKSB__APP__V5APIRootURL"
-          value = "/bksblive2/v5api/api"
-        }
+        { name = "ASPNETCORE_ENVIRONMENT", value = "Production" },
+        { name = "ASPNETCORE_URLS", value = "https://+:443" },
+        { name = "Sentry__Debug", value = "false" },
+        { name = "BKSB__APP__AllowDirectLogin", value = "false" },
+        { name = "BKSB__APP__AssessmentFinishedNotificationURL", value = "https://bksb.stage.euw2.bksb.dev/bksblive2/SendV5.aspx" },
+        { name = "BKSB__APP__AssessmentResultFileStoreRegion", value = "eu-west-1" },
+        { name = "BKSB__APP__AssessmentResultRootPartition", value = "bksbdevenginecontent-stage" },
+        { name = "BKSB__APP__AssessmentResultRootPath", value = "aus/assessment-engine/assessment-results-live/" },
+        { name = "BKSB__APP__CourseFileStoreRegion", value = "eu-west-1" },
+        { name = "BKSB__APP__CourseFlowsFileStoreRegion", value = "eu-west-1" },
+        { name = "BKSB__APP__CourseFlowsRootPartition", value = "bksbdevenginecontent-stage" },
+        { name = "BKSB__APP__CourseFlowsRootPath", value = "aus/course-flows" },
+        { name = "BKSB__APP__CourseRootPartition", value = "bksbdevenginecontent-stage" },
+        { name = "BKSB__APP__CourseRootPath", value = "aus/courses/courses" },
+        { name = "BKSB__APP__HostingBasePath", value = "/bksblive2/v5api/" },
+        { name = "BKSB__APP__KeyFileStoreRegion", value = "eu-west-2" },
+        { name = "BKSB__APP__KeyRootPartition", value = "staging-bksb-fargate-ireland-key" },
+        { name = "BKSB__APP__KeyRootPath", value = "aus/applicationkeys/signing-keys" },
+        { name = "BKSB__APP__NotifyWhenAssessmentFinished", value = "true" },
+        { name = "BKSB__APP__ProgressFileStoreRegion", value = "eu-west-1" },
+        { name = "BKSB__APP__ProgressRootPartition", value = "bksbdevenginecontent-stage" },
+        { name = "BKSB__APP__ProgressRootPath", value = "aus/resource-engine/progress-live/" },
+        { name = "BKSB__APP__QuestionFileStoreRegion", value = "eu-west-1" },
+        { name = "BKSB__APP__QuestionRootPartition", value = "bksbdevenginecontent-stage" },
+        { name = "BKSB__APP__QuestionRootPath", value = "aus/assessment-engine/questions/" },
+        { name = "BKSB__APP__ResourceFileStoreRegion", value = "eu-west-1" },
+        { name = "BKSB__APP__ResourceRootPartition", value = "bksbbuildercontentdev" },
+        { name = "BKSB__APP__ResourceRootPath", value = "aus/builderv5/resources_dev" },
+        { name = "BKSB__APP__ResponseFileStoreRegion", value = "eu-west-1" },
+        { name = "BKSB__APP__ResponseRootPartition", value = "bksbdevenginecontent-stage" },
+        { name = "BKSB__APP__ResponseRootPath", value = "aus/assessment-engine/responses-live/" },
+        { name = "BKSB__APP__TransferTokenSigningKeyFileStoreRegion", value = "eu-west-2" },
+        { name = "BKSB__APP__TransferTokenSigningKeyPath", value = "transfer.txt" },
+        { name = "BKSB__APP__TransferTokenSigningKeyRootPartition", value = "staging-bksb-fargate-ireland-key" },
+        { name = "BKSB__APP__TransferTokenSigningKeyRootPath", value = "domainkeys/staging.euw2.bksb.dev/" },
+        { name = "BKSB__APP__UseLocalFileStores", value = "false" },
+        { name = "BKSB__APP__ValidTransferTokenAudience", value = "bksblive2.co.uk" },
+        { name = "BKSB__APP__ValidTransferTokenIssuer", value = "stage.euw2.bksb.dev" },
+        { name = "ComPlus_ThreadPool_ForceMinWorkerThreads", value = "32" },
+        { name = "COMPlus_ThreadPool_ForceMinWorkerThreads", value = "32" }
       ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = aws_cloudwatch_log_group.BKSBReformsAPIECSContainerTaskDefinitionBKSBReformsAPIECSContainerLogGroup41749BF1.name
-          awslogs-region        = "eu-west-2"
-          awslogs-stream-prefix  = "new_bksb-ecs"  # Updated value
+          "awslogs-group"         = aws_cloudwatch_log_group.bksb_reforms_api_ecs_container_log_group.name
+          "awslogs-stream-prefix" = "bksb-ecs"
+          "awslogs-region"        = "ap-southeast-2"
         }
       }
       secrets = [
-        {
-          name      = "BKSB__DB__DatabaseConnectionString"
-          valueFrom = "arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/new_bksb-reforms-api/db_connection_string"  # Updated value
-        },
-        {
-          name      = "BKSB__APP__SessionStoreConfigString"
-          valueFrom = "arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/new_bksb-reforms-api/redis_connection_string"  # Updated value
-        },
-        {
-          name      = "BKSB__APP__TransferTokenInvalidationStoreConfigString"
-          valueFrom = "arn:aws:secretsmanager:eu-west-2:203616038615:secret:prod/new_bksb-reforms-api/redis_connection_string"  # Updated value
-        }
+        { name = "BKSB__DB__DatabaseConnectionString", valueFrom = var.db_connection_string_secret_arn },
+        { name = "BKSB__APP__SessionStoreConfigString", valueFrom = var.redis_connection_string_secret_arn },
+        { name = "BKSB__APP__TransferTokenInvalidationStoreConfigString", valueFrom = var.redis_connection_string_secret_arn }
       ]
     },
     {
-      name      = "xray-daemon"
-      image     = "amazon/aws-xray-daemon:latest"
-      cpu       = 32
+      name        = "xray-daemon"
+      cpu         = 32
       memoryReservation = 256
-      essential = true
+      essential   = true
+      image       = "amazon/aws-xray-daemon:latest"
       portMappings = [
         {
           containerPort = 2000
@@ -344,52 +410,77 @@ resource "aws_ecs_task_definition" "NewBKSBReformsAPIECSContainerTaskDefinition"
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = aws_cloudwatch_log_group.BKSBReformsAPIECSContainerTaskDefinitionBKSBLive2ReformsAPIXRayECSContainerLogGroupCD8A9FA5.name
-          awslogs-region        = "eu-west-2"
-          awslogs-stream-prefix  = "new_bksb-ecs"  # Updated value
+          "awslogs-group"         = aws_cloudwatch_log_group.bksb_reforms_api_xray_ecs_container_log_group.name
+          "awslogs-stream-prefix" = "bksb-ecs"
+          "awslogs-region"        = "ap-southeast-2"
         }
       }
     }
   ])
-}
 
-resource "aws_cloudwatch_log_group" "BKSBReformsAPIECSContainerTaskDefinitionBKSBReformsAPIECSContainerLogGroup" {
-  name              = "BKSBReformsAPIECSContainerTaskDefinitionBKSBReformsAPIECSContainerLogGroup"
-  retention_in_days = 7
-}
-
-resource "aws_ecs_service" "BKSBReformsAPIECSService" {
-  name            = "NewBKSBReformsAPIECSService"  # Updated name
-  cluster         = var.ecs_cluster_name
-  task_definition = aws_ecs_task_definition.NewBKSBReformsAPIECSContainerTaskDefinition.arn  # Updated reference
-  desired_count   = 1
-  launch_type     = "FARGATE"
-
-  network_configuration {
-    assign_public_ip = "DISABLED"
-    security_groups  = [aws_security_group.NewBKSBReformsAPISG.id]  # Updated reference
-    subnets          = var.subnet_ids
+  tags = {
+    "Name" = "StageBKSBReformsAPIAppSydney/BKSBReformsAPIECSContainerTaskDefinition/Resource"
   }
+}
+
+# AWS::ECS::Service
+resource "aws_ecs_service" "bksb_reforms_api_ecs_service" {
+  name                            = "bksb-reforms-api-service"
+  cluster                         = var.cluster_name
+  task_definition                 = aws_ecs_task_definition.bksb_reforms_api_task_definition.arn
+  desired_count                   = 3
+  launch_type                     = "FARGATE"
+  enable_ecs_managed_tags         = false
+  enable_execute_command          = false
+  health_check_grace_period_seconds = 60
+  deployment_controller {
+    type = "CODE_DEPLOY"
+  }
+  deployment_maximum_percent        = 200
+  deployment_minimum_healthy_percent = 50
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.NewALBTargetGroupOne.arn  # Updated reference
-    container_name   = "new_bksb-reforms-api"  # Updated container name
+    target_group_arn = aws_lb_target_group.alb_target_group_one.arn
+    container_name   = "bksb-reforms-api"
     container_port   = 443
+  }
+
+  network_configuration {
+    subnets          = [var.subnet_1_id, var.subnet_2_id]
+    security_groups  = [aws_security_group.bksb_reforms_api_sg.id]
+    assign_public_ip = false
+  }
+
+  lifecycle {
+    ignore_changes = [desired_count]
+  }
+
+  tags = {
+    "Name" = "StageBKSBReformsAPIAppSydney/BKSBReformsAPIECSService/Service"
   }
 }
 
-resource "aws_application_autoscaling_target" "BKSBReformsAPIECSServiceTaskCountTarget" {
+# AWS::ApplicationAutoScaling::ScalableTarget
+resource "aws_appautoscaling_target" "ecs_scalable_target" {
   max_capacity       = 12
   min_capacity       = 3
-  resource_id        = "service/${var.ecs_cluster_name}/${aws_ecs_service.BKSBReformsAPIECSService.name}"  # Updated reference
-  scalable_dimension  = "ecs:service:DesiredCount"
-  service_namespace   = "ecs"
+  resource_id        = "service/${var.cluster_name}/${aws_ecs_service.bksb_reforms_api_ecs_service.name}"
+  role_arn           = "arn:aws:iam::352515133004:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+
+  depends_on = [
+    aws_ecs_service.bksb_reforms_api_ecs_service
+  ]
 }
 
-resource "aws_application_autoscaling_policy" "BKSBReformsAPIECSServiceScalingPolicy" {
-  name                   = "NewBKSBReformsAPIECSServiceScalingPolicy"  # Updated name
-  policy_type           = "TargetTrackingScaling"
-  scaling_target_id     = aws_application_autoscaling_target.BKSBReformsAPIECSServiceTaskCountTarget.id  # Updated reference
+# AWS::ApplicationAutoScaling::ScalingPolicy
+resource "aws_appautoscaling_policy" "ecs_scaling_policy" {
+  name               = "BKSBReformsAPIECSServiceTaskCountTargetBKSBReformsAPIECSServiceScaling"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.ecs_scalable_target.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_scalable_target.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs_scalable_target.service_namespace
 
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
@@ -397,16 +488,25 @@ resource "aws_application_autoscaling_policy" "BKSBReformsAPIECSServiceScalingPo
     }
     target_value = 50
   }
+
+  depends_on = [
+    aws_appautoscaling_target.ecs_scalable_target
+  ]
 }
 
-resource "aws_codedeploy_app" "CDApplication" {
-  name             = "NewCDApplication"  # Updated name
+# AWS::CodeDeploy::Application
+resource "aws_codedeploy_app" "code_deploy_application" {
+  name             = "StageBKSBReformsAPIAppSydney"
   compute_platform = "ECS"
+
+  tags = {
+    "Name" = "StageBKSBReformsAPIAppSydeny/CDApplication/Resource"
+  }
 }
 
-resource "aws_iam_role" "CDRole" {
-  name = "NewCDRole"  # Updated name
-
+# AWS::IAM::Role - CDRole
+resource "aws_iam_role" "codedeploy_role" {
+  name = "CodeDeployRoleForECS"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -414,39 +514,31 @@ resource "aws_iam_role" "CDRole" {
         Action = "sts:AssumeRole"
         Effect = "Allow"
         Principal = {
-          Service = "codedeploy.eu-west-2.amazonaws.com"
+          Service = "codedeploy.amazonaws.com"
         }
-      }
+      },
     ]
   })
+  # The 'managed_policy_arns' argument has been removed as it's deprecated.
+  # The policy attachment will be handled by a separate 'aws_iam_role_policy_attachment' resource.
+
+  tags = {
+    "Name" = "StageBKSBReformsAPIAppSydney/CDRole/Resource"
+  }
 }
 
-resource "aws_iam_role_policy" "CDRolePolicy" {
-  name = "NewAWSCodeDeployRoleForECS"  # Updated name
-  role = aws_iam_role.CDRole.name  # Updated reference
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = [
-          "codedeploy:*",
-          "ecs:*",
-          "elasticloadbalancing:*",
-          "iam:PassRole"
-        ]
-        Effect   = "Allow"
-        Resource = "*"  # No change
-      }
-    ]
-  })
+# Add a separate resource to attach the managed policy
+resource "aws_iam_role_policy_attachment" "codedeploy_role_managed_policy_attachment" {
+  role       = aws_iam_role.codedeploy_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS"
 }
 
-resource "aws_codedeploy_deployment_group" "CDDeploymentGroup" {
-  app_name               = aws_codedeploy_app.CDApplication.name
-  deployment_group_name  = "NewBKSBReformsAPIECSDeploymentGroup"
-  service_role_arn       = aws_iam_role.CDRole.arn
-  deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
+# AWS::CodeDeploy::DeploymentGroup
+resource "aws_codedeploy_deployment_group" "code_deploy_deployment_group" {
+  app_name                = aws_codedeploy_app.code_deploy_application.name
+  deployment_group_name   = "StageBKSBReformsAPIAppSydneyDeploymentGroup"
+  service_role_arn        = aws_iam_role.codedeploy_role.arn
+  deployment_config_name  = "CodeDeployDefault.ECSAllAtOnce"
 
   auto_rollback_configuration {
     enabled = true
@@ -455,38 +547,42 @@ resource "aws_codedeploy_deployment_group" "CDDeploymentGroup" {
 
   blue_green_deployment_config {
     deployment_ready_option {
-      action_on_timeout     = "STOP_DEPLOYMENT"
-      wait_time_in_minutes  = 1440
+      action_on_timeout    = "STOP_DEPLOYMENT"
+      wait_time_in_minutes = 1440
     }
-
     terminate_blue_instances_on_deployment_success {
-      action                         = "TERMINATE"
+      action                       = "TERMINATE"
       termination_wait_time_in_minutes = 60
     }
   }
 
-  ecs_service {
-    cluster_name = var.ecs_cluster_name
-    service_name = aws_ecs_service.BKSBReformsAPIECSService.name
+  deployment_style {
+    deployment_option = "WITH_TRAFFIC_CONTROL"
+    deployment_type   = "BLUE_GREEN"
   }
 
-  load_balancer_info {
-    target_group_pair_info {
-      prod_traffic_route {
-        listener_arns = [var.new_prod_listener_arn]
-      }
+  ecs_service {
+    cluster_name = var.cluster_name
+    service_name = aws_ecs_service.bksb_reforms_api_ecs_service.name
+  }
 
-      test_traffic_route {
-        listener_arns = [var.new_test_listener_arn]
-      }
+load_balancer_info {
+  target_group_pair_info {
+    prod_traffic_route {
+      listener_arns = [var.alb_listener_prod_arn]
+    }
 
-      target_group {
-        name = aws_lb_target_group.NewALBTargetGroupOne.name
-      }
+    test_traffic_route {
+      listener_arns = [var.alb_listener_test_arn]
+    }
 
-      target_group {
-        name = aws_lb_target_group.NewALBTargetGroupTwo.name
-      }
+    target_group {
+      name = aws_lb_target_group.alb_target_group_one.name
+    }
+
+    target_group {
+      name = aws_lb_target_group.alb_target_group_two.name
     }
   }
+}
 }
